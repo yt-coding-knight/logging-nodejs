@@ -1,7 +1,10 @@
 import express from "express"
+import pinoHttp from "pino-http"
 import connectDb, { getDb } from "./db.js"
+import logger from "./logger.js"
 
 const app = express()
+app.use(pinoHttp({ logger }))
 
 function pagination(nameCollection) {
   return async (req, res, next) => {
@@ -40,10 +43,12 @@ function pagination(nameCollection) {
     }
 
     try {
+      throw new Error("this is error")
       result.result = await collection.find().limit(limit).skip(skip).toArray()
       req.result = result
       next()
     } catch (error) {
+      req.log.error(error, "request error")
       res.status(500).json(error.message)
     }
   }
@@ -56,6 +61,6 @@ app.get("/products", pagination("products"), (req, res) => {
 })
 
 app.listen(3000, () => {
-  console.log("server running")
+  logger.info("server running")
   connectDb()
 })
